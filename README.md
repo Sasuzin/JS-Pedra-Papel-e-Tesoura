@@ -28,6 +28,7 @@
 |---|---|
 | 🎬 **Jo… Ken… Pô!** | As mãos sobem e descem no ritmo da contagem e se revelam com onda de choque e faíscas |
 | 🌐 **Online** | Entre numa sala aberta da lista ou crie a sua, pública ou privada, e jogue contra outra pessoa em tempo real |
+| 💬 **Chat na sala** | Converse com o adversário durante a partida, com mensagens rápidas e balão de fala em cima da mão |
 | 🏆 **Melhor de 3 e de 5** | Bolinhas de progresso, coroa para quem lidera e tela de fim de partida com revanche |
 | 🎉 **Efeitos** | Confete na vitória, tela tremendo na derrota, clarões coloridos e sons gerados na hora |
 | 📊 **Estatísticas** | Sequência de vitórias, recorde salvo no navegador, % de vitórias e histórico das rodadas |
@@ -44,12 +45,15 @@ Clique em **Online**, no canto superior direito, digite seu nome e escolha como 
 | 🌐 **Criar sala pública** | Sua sala aparece na lista para qualquer pessoa entrar. |
 | 🔒 **Criar sala privada** | Não aparece na lista: só entra quem tiver o código de 5 letras ou o link que você mandar. |
 
-Depois é só jogar: cada um escolhe sua jogada e as mãos se revelam ao mesmo tempo. Ainda dá para mandar reações 👏 😂 😱 🔥 😎
+Depois é só jogar: cada um escolhe sua jogada e as mãos se revelam ao mesmo tempo. Ainda dá para mandar reações 👏 😂 😱 🔥 😎 e conversar pelo **chat da sala** (botão 💬 no canto da tela). As mensagens também aparecem num balão em cima da mão de quem escreveu.
 
 <table>
   <tr>
-    <td align="center" width="34%"><img src="docs/screenshots/saguao.jpg" alt="Lista de salas abertas no celular, com a sala da Ana esperando adversário" width="250"><br><sub><b>Salas abertas</b>, ao vivo</sub></td>
-    <td align="center"><img src="docs/screenshots/sala.jpg" alt="Sala pública criada, com o código de 5 letras e o link para compartilhar" width="520"><br><sub><b>Sala criada:</b> pública ou privada, com código e link</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/saguao.jpg" alt="Lista de salas abertas no celular, com a sala da Ana esperando adversário" width="250"><br><sub><b>Salas abertas</b>, ao vivo</sub></td>
+    <td align="center" width="50%"><img src="docs/screenshots/chat.jpg" alt="Chat da sala aberto no celular, com mensagens entre Ana e Beto" width="250"><br><sub><b>Chat</b> com o adversário</sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/screenshots/sala.jpg" alt="Sala pública criada, com o código de 5 letras e o link para compartilhar" width="620"><br><sub><b>Sala criada:</b> pública ou privada, com código e link</sub></td>
   </tr>
   <tr>
     <td align="center" colspan="2"><img src="docs/screenshots/online.jpg" alt="Partida online entre Ana e Beto, com placar, resultado e uma reação na tela" width="780"><br><sub><b>Partida valendo</b> contra outra pessoa, em tempo real</sub></td>
@@ -67,6 +71,7 @@ Depois é só jogar: cada um escolhe sua jogada e as mãos se revelam ao mesmo t
 - O servidor público do PeerJS só faz a apresentação inicial entre os jogadores. Por isso o jogo não precisa de backend e roda 100% no **GitHub Pages**.
 - A lista de **salas abertas** usa **MQTT**, um "mural" de mensagens em tempo real: cada sala pública é anunciada em dois servidores públicos (HiveMQ e EMQX), para a lista continuar funcionando mesmo se um deles cair. Na lista aparecem só o nome de quem criou, o modo de jogo e há quanto tempo a sala está esperando.
 - A sala sai da lista sozinha quando alguém entra, quando o dono sai ou quando a aba dele fecha.
+- O **chat** usa a mesma conexão direta da partida: as mensagens vão de um navegador para o outro e não ficam salvas em lugar nenhum. Elas aparecem sempre como texto puro, com limite de tamanho e proteção contra spam.
 - Quem cria a sala comanda o modo de jogo e o placar; o convidado acompanha.
 - Se alguém fecha a aba ou a conexão cai, o outro é avisado na hora. Quem criou a sala continua esperando um novo adversário.
 - Em redes muito restritas (algumas redes de empresa ou de faculdade), a conexão direta pode ser bloqueada.
@@ -124,6 +129,7 @@ Depois abra <http://localhost:8000>. Para jogar só contra o computador, também
  ┣ 🎮 jokenpo.js   → regras, animações, placar, sons e efeitos
  ┣ 🌐 online.js    → salas online (PeerJS + lacre das jogadas)
  ┣ 📋 salas.js     → lista de salas públicas (MQTT)
+ ┣ 💬 chat.js      → chat entre os jogadores da sala
  ┗ 🖼️ docs/        → imagens deste README
 ```
 
