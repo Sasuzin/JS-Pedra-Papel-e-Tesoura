@@ -1247,6 +1247,642 @@ button {
     color: var(--suave);
 }
 
+/* ---------- Modo online ---------- */
+
+.botao-online {
+    position: relative;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px 0 13px;
+    border-radius: 14px;
+    border: 1px solid rgba(74, 222, 128, 0.45);
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.18), rgba(34, 211, 238, 0.16));
+    color: var(--texto);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 8px 24px -14px rgba(74, 222, 128, 0.9);
+    transition: transform 0.25s var(--mola), box-shadow 0.25s, border-color 0.25s;
+}
+
+.botao-online::after {
+    content: "";
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--vitoria);
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
+    animation: ping-ponto 2s ease-out infinite;
+}
+
+.botao-online svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.6s var(--mola);
+}
+
+.botao-online:hover {
+    transform: translateY(-2px) scale(1.04);
+    border-color: var(--vitoria);
+    box-shadow: 0 12px 28px -12px rgba(74, 222, 128, 1);
+}
+
+.botao-online:hover svg {
+    transform: rotate(200deg);
+}
+
+.botao-online:active {
+    transform: scale(0.94);
+}
+
+@keyframes ping-ponto {
+    0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+    70%, 100% { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0); }
+}
+
+/* Barra da sala */
+.barra-online {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    padding: 10px 12px 10px 16px;
+    border-color: rgba(74, 222, 128, 0.3);
+}
+
+.online-ponto {
+    --cor-ponto: var(--empate);
+    flex: none;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--cor-ponto);
+    box-shadow: 0 0 10px var(--cor-ponto);
+    animation: pulso-ponto 1.6s ease-in-out infinite;
+}
+
+.online-ponto.conectado { --cor-ponto: var(--vitoria); }
+.online-ponto.instavel { --cor-ponto: var(--derrota); }
+
+@keyframes pulso-ponto {
+    50% { transform: scale(0.7); opacity: 0.6; }
+}
+
+.online-info {
+    flex: 1 1 160px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.online-sala {
+    font-weight: 600;
+}
+
+.online-sala b {
+    letter-spacing: 0.12em;
+    color: var(--vitoria);
+}
+
+.online-status {
+    overflow: hidden;
+    font-size: 0.85rem;
+    color: var(--suave);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.online-acoes {
+    display: flex;
+    gap: 8px;
+}
+
+.botao-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--borda);
+    background: var(--superficie-2);
+    color: var(--texto);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s var(--mola), background 0.2s, border-color 0.2s;
+}
+
+.botao-mini svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.botao-mini:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.botao-mini:active {
+    transform: scale(0.94);
+}
+
+.botao-mini.perigo:hover {
+    border-color: rgba(248, 113, 113, 0.6);
+    background: rgba(248, 113, 113, 0.16);
+}
+
+/* Modo bloqueado para o convidado (só o dono da sala escolhe) */
+.modo[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+/* Selos "pensando…" / "pronto!" em cima das mãos */
+.selo {
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    z-index: 2;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    background: rgba(15, 10, 40, 0.85);
+    border: 1px solid var(--borda);
+    color: var(--suave);
+    animation: selo-entra 0.45s var(--mola);
+}
+
+.selo.pronto {
+    color: #052e16;
+    background: var(--vitoria);
+    border-color: transparent;
+    box-shadow: 0 0 18px -2px rgba(74, 222, 128, 0.9);
+}
+
+@keyframes selo-entra {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 8px) scale(0.6);
+    }
+}
+
+/* Reações */
+.reacoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: -4px;
+}
+
+.reacoes-rotulo {
+    margin-right: 2px;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--suave);
+}
+
+.reacao {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--borda);
+    background: var(--superficie);
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: transform 0.25s var(--mola), background 0.2s, border-color 0.2s;
+}
+
+.reacao:hover {
+    transform: translateY(-3px) scale(1.15) rotate(-8deg);
+    background: var(--superficie-2);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+.reacao:active {
+    transform: scale(0.88);
+}
+
+/* fixa na tela (o JS posiciona no centro da mão), abaixo das janelas (60) e dos avisos (80) */
+.reacao-voando {
+    position: fixed;
+    z-index: 50;
+    font-size: 2.4rem;
+    pointer-events: none;
+    animation: reacao-voa 1.6s ease-out forwards;
+}
+
+@keyframes reacao-voa {
+    0% { opacity: 0; transform: translate(-50%, -30%) scale(0.3); }
+    15% { opacity: 1; transform: translate(-50%, -60%) scale(1.25); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx, 0px)), -150px) scale(0.9) rotate(var(--rot, 0deg)); }
+}
+
+/* Avisos rápidos */
+.toasts {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: min(92vw, 420px);
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.toast {
+    max-width: 100%;
+    padding: 11px 18px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: center;
+    color: var(--texto);
+    background: rgba(24, 17, 58, 0.92);
+    border: 1px solid var(--borda);
+    box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    animation: toast-entra 0.5s var(--mola);
+}
+
+.toast.sucesso { border-color: rgba(74, 222, 128, 0.55); }
+.toast.erro { border-color: rgba(248, 113, 113, 0.6); }
+
+.toast.saindo {
+    animation: toast-sai 0.35s ease-in forwards;
+}
+
+@keyframes toast-entra {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.85);
+    }
+}
+
+@keyframes toast-sai {
+    to {
+        opacity: 0;
+        transform: translateY(-14px) scale(0.92);
+    }
+}
+
+/* Painel online */
+.modal-card.online-card {
+    width: min(440px, 100%);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+}
+
+.fechar {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--suave);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, transform 0.25s var(--mola);
+}
+
+.fechar svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.fechar:hover {
+    color: var(--texto);
+    background: var(--superficie-2);
+    transform: rotate(90deg);
+}
+
+.etapa {
+    position: relative;
+    animation: etapa-entra 0.45s var(--suave-saida);
+}
+
+@keyframes etapa-entra {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+}
+
+.modal-icone.online-icone {
+    animation: girar-globo 6s linear infinite;
+}
+
+@keyframes girar-globo {
+    0%, 100% { transform: rotate(-12deg) scale(1); }
+    50% { transform: rotate(12deg) scale(1.08); }
+}
+
+.convite {
+    margin: 0 0 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    color: var(--texto);
+    background: rgba(74, 222, 128, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+}
+
+.convite b {
+    letter-spacing: 0.12em;
+    color: var(--vitoria);
+}
+
+.campo {
+    display: grid;
+    gap: 6px;
+    margin: 4px 0 16px;
+    text-align: left;
+}
+
+.campo span {
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--suave);
+}
+
+.campo input,
+.entrar-sala input,
+.link-sala input {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--borda);
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--texto);
+    font: 500 1rem/1.2 var(--fonte);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.campo input:focus,
+.entrar-sala input:focus,
+.link-sala input:focus {
+    outline: none;
+    border-color: var(--roxo);
+    box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.3);
+}
+
+.entrar-sala input {
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-weight: 700;
+}
+
+.entrar-sala input::placeholder {
+    letter-spacing: 0.15em;
+    font-weight: 500;
+}
+
+.entrar-sala,
+.link-sala {
+    display: flex;
+    gap: 8px;
+}
+
+.link-sala input {
+    font-size: 0.85rem;
+    color: var(--suave);
+}
+
+.link-sala + .botao-primario {
+    margin-top: 12px;
+}
+
+.botao-primario.largo {
+    width: 100%;
+}
+
+.botao-primario:disabled {
+    cursor: wait;
+    opacity: 0.7;
+    transform: none;
+}
+
+.botao-secundario {
+    flex: none;
+    padding: 12px 18px;
+    border-radius: 12px;
+    border: 1px solid rgba(167, 139, 250, 0.5);
+    background: rgba(167, 139, 250, 0.16);
+    color: var(--texto);
+    font-size: 0.98rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s var(--mola), background 0.2s;
+}
+
+.botao-secundario:not(:disabled):hover {
+    transform: translateY(-1px);
+    background: rgba(167, 139, 250, 0.3);
+}
+
+.botao-secundario:not(:disabled):active {
+    transform: scale(0.95);
+}
+
+.botao-secundario:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
+.botao-texto {
+    display: block;
+    margin: 14px auto 0;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    color: var(--suave);
+    font-size: 0.92rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.botao-texto:hover {
+    color: var(--texto);
+}
+
+.divisor {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 14px;
+    font-size: 0.8rem;
+    color: var(--suave);
+}
+
+.divisor::before,
+.divisor::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--borda);
+}
+
+.erro-online {
+    min-height: 1.3em;
+    margin: 12px 0 0;
+    font-size: 0.9rem;
+    color: var(--derrota);
+}
+
+.erro-online:empty {
+    margin: 0;
+    min-height: 0;
+}
+
+.erro-online:not(:empty) {
+    animation: negar 0.35s ease-in-out;
+}
+
+/* Radar de espera */
+.radar {
+    position: relative;
+    width: 92px;
+    height: 92px;
+    margin: 0 auto 6px;
+    display: grid;
+    place-items: center;
+}
+
+.radar span {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid var(--vitoria);
+    opacity: 0;
+    animation: radar 2.2s ease-out infinite;
+}
+
+.radar span + span {
+    animation-delay: 1.1s;
+}
+
+.radar b {
+    font-size: 2.6rem;
+    font-weight: 400;
+    animation: trofeu 2.4s ease-in-out infinite;
+}
+
+@keyframes radar {
+    0% { opacity: 0.9; transform: scale(0.4); }
+    100% { opacity: 0; transform: scale(1.15); }
+}
+
+.codigo-sala {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 6px 0 16px;
+}
+
+.codigo-sala span {
+    width: 48px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--vitoria);
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.45);
+    text-shadow: 0 0 16px rgba(74, 222, 128, 0.6);
+    animation: letra 0.7s var(--mola) backwards;
+    animation-delay: calc(var(--i) * 80ms);
+}
+
+.aguardando-texto {
+    margin: 18px 0 0;
+    color: var(--suave);
+}
+
+.pontinhos i {
+    display: inline-block;
+    font-style: normal;
+    animation: pontinho 1.2s ease-in-out infinite;
+}
+
+.pontinhos i:nth-child(2) { animation-delay: 0.15s; }
+.pontinhos i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes pontinho {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+}
+
+.spinner {
+    width: 64px;
+    height: 64px;
+    margin: 8px auto 4px;
+    border-radius: 50%;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--jogador);
+    border-right-color: var(--cpu);
+    animation: girar 0.9s linear infinite;
+}
+
+.modal-revanche {
+    position: relative;
+    margin: -10px 0 18px;
+    font-weight: 600;
+    color: var(--empate);
+    animation: pop 0.5s var(--mola);
+}
+
+/* vazia, a região continua no DOM (para leitores de tela) mas sem ocupar espaço */
+.modal-revanche:empty {
+    margin: 0;
+    animation: none;
+}
+
 /* ---------- Rodapé ---------- */
 
 .rodape {
@@ -1326,8 +1962,10 @@ button {
 
 .modal-card {
     position: relative;
-    overflow: hidden;
+    overflow: hidden auto;
     width: min(420px, 100%);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     padding: 34px 24px 28px;
     text-align: center;
     border-radius: 28px;
@@ -1429,16 +2067,30 @@ button {
     100% { left: 130%; }
 }
 
-.botao-primario:hover {
+.botao-primario:not(:disabled):hover {
     transform: translateY(-2px) scale(1.04);
     box-shadow: 0 18px 36px -10px rgba(167, 139, 250, 0.95);
 }
 
-.botao-primario:active {
+.botao-primario:not(:disabled):active {
     transform: scale(0.96);
 }
 
 /* ---------- Responsivo ---------- */
+
+/* com o botão Online, logo + modos + ações não cabem numa linha só abaixo disso */
+@media (max-width: 780px) {
+    .topo {
+        grid-template-columns: 1fr auto;
+        row-gap: 12px;
+    }
+
+    .modos {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+    }
+}
 
 @media (max-width: 720px) {
     .painel {
@@ -1450,17 +2102,6 @@ button {
     .app {
         gap: 14px;
         padding-top: 16px;
-    }
-
-    .topo {
-        grid-template-columns: 1fr auto;
-        row-gap: 12px;
-    }
-
-    .modos {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        width: 100%;
     }
 
     .placar {
@@ -1484,6 +2125,45 @@ button {
     .nome-lutador {
         padding: 4px 9px;
     }
+
+    .botao-online {
+        width: 44px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .botao-online-texto {
+        display: none;
+    }
+
+    .barra-online {
+        padding: 10px 10px 10px 14px;
+    }
+
+    .online-acoes {
+        width: 100%;
+    }
+
+    .online-acoes .botao-mini {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .codigo-sala span {
+        width: 44px;
+        height: 54px;
+        font-size: 1.7rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .codigo-sala {
+        gap: 6px;
+    }
+
+    .codigo-sala span {
+        width: 40px;
+    }
 }
 
 @media (hover: none) {
@@ -1503,8 +2183,19 @@ button {
     .modal-icone,
     .botao-primario::after,
     .stat.quente .stat-icone,
-    .arena.jogando .palco::before {
+    .arena.jogando .palco::before,
+    .botao-online::after,
+    .online-ponto,
+    .online-icone,
+    .radar b,
+    .radar span,
+    .pontinhos i {
         animation: none !important;
+    }
+
+    .radar span:first-child {
+        opacity: 0.5;
+        transform: scale(1);
     }
 
     .app.tremer {

@@ -43,6 +43,10 @@
             </div>
 
             <div class="acoes">
+                <button class="botao-online" id="btn-online" type="button" title="Jogar online com um amigo" hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    <span class="botao-online-texto">Online</span>
+                </button>
                 <button class="botao-icone" id="btn-som" type="button" aria-label="Som" aria-pressed="true" title="Som (M)">
                     <svg class="ic-som-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
                     <svg class="ic-som-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>
@@ -52,6 +56,25 @@
                 </button>
             </div>
         </header>
+
+        <!-- Barra da sala online (só aparece no modo online) -->
+        <section class="card barra-online entrar" id="barra-online" aria-label="Sala online" hidden>
+            <span class="online-ponto" id="online-ponto" aria-hidden="true"></span>
+            <div class="online-info">
+                <span class="online-sala">Sala <b id="online-codigo">-----</b></span>
+                <span class="online-status" id="online-status" aria-live="polite">Aguardando adversário…</span>
+            </div>
+            <div class="online-acoes">
+                <button class="botao-mini" id="btn-copiar-barra" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <span>Copiar link</span>
+                </button>
+                <button class="botao-mini perigo" id="btn-sair-sala" type="button">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                    <span>Sair</span>
+                </button>
+            </div>
+        </section>
 
         <!-- Placar -->
         <section class="placar entrar" style="--d:1" aria-label="Placar">
@@ -68,7 +91,7 @@
             </div>
             <div class="card pontuacao cpu" id="placar-cpu">
                 <span class="coroa" aria-hidden="true">👑</span>
-                <span class="rotulo">Computador</span>
+                <span class="rotulo" id="rotulo-cpu">Computador</span>
                 <span class="pontos" id="pontos-cpu">0</span>
                 <div class="pips" id="pips-cpu" hidden></div>
             </div>
@@ -79,9 +102,10 @@
             <div class="lutador jogador" id="lutador-jogador">
                 <div class="palco" id="palco-jogador">
                     <span class="onda" aria-hidden="true"></span>
+                    <span class="selo" id="selo-jogador" hidden></span>
                     <div class="mao-wrap ocioso"><span class="mao" id="mao-jogador" aria-hidden="true">✊</span></div>
                 </div>
-                <span class="nome-lutador">🧑 Você</span>
+                <span class="nome-lutador" id="nome-jogador">🧑 Você</span>
             </div>
 
             <div class="versus" id="versus" aria-hidden="true">
@@ -91,9 +115,10 @@
             <div class="lutador cpu" id="lutador-cpu">
                 <div class="palco" id="palco-cpu">
                     <span class="onda" aria-hidden="true"></span>
+                    <span class="selo" id="selo-cpu" hidden></span>
                     <div class="mao-wrap ocioso"><span class="mao" id="mao-cpu" aria-hidden="true">✊</span></div>
                 </div>
-                <span class="nome-lutador">🤖 Computador</span>
+                <span class="nome-lutador" id="nome-cpu">🤖 Computador</span>
             </div>
         </section>
 
@@ -121,6 +146,16 @@
                 <kbd aria-hidden="true">3</kbd>
             </button>
         </section>
+
+        <!-- Reações rápidas (modo online) -->
+        <div class="reacoes" id="reacoes" role="group" aria-label="Mandar reação para o adversário" hidden>
+            <span class="reacoes-rotulo">Reagir</span>
+            <button class="reacao" type="button" data-reacao="👏" aria-label="Aplaudir">👏</button>
+            <button class="reacao" type="button" data-reacao="😂" aria-label="Rir">😂</button>
+            <button class="reacao" type="button" data-reacao="😱" aria-label="Espanto">😱</button>
+            <button class="reacao" type="button" data-reacao="🔥" aria-label="Fogo">🔥</button>
+            <button class="reacao" type="button" data-reacao="😎" aria-label="Confiante">😎</button>
+        </div>
 
         <!-- Estatísticas e histórico -->
         <div class="painel entrar" style="--d:5">
@@ -182,11 +217,71 @@
             <h2 class="modal-titulo" id="modal-titulo">Você venceu a partida!</h2>
             <p class="modal-placar" id="modal-placar"></p>
             <p class="modal-texto" id="modal-texto"></p>
+            <p class="modal-revanche" id="modal-revanche" aria-live="polite"></p>
             <button class="botao-primario" id="btn-novamente" type="button">Jogar de novo</button>
+            <button class="botao-texto" id="btn-sair-partida" type="button" hidden>Sair da sala</button>
         </div>
     </div>
 
+    <!-- Painel do modo online: criar sala, entrar com código e esperar o adversário -->
+    <div class="modal" id="modal-online" role="dialog" aria-modal="true" aria-labelledby="online-titulo" hidden>
+        <div class="modal-card online-card">
+            <button class="fechar" id="btn-fechar-online" type="button" aria-label="Fechar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+
+            <!-- Etapa 1: escolher entre criar ou entrar -->
+            <div class="etapa" data-etapa="inicio">
+                <span class="modal-icone online-icone" aria-hidden="true">🌐</span>
+                <h2 class="modal-titulo" id="online-titulo">Jogar online</h2>
+                <p class="convite" id="convite" hidden>Você foi convidado para a sala <b id="convite-codigo"></b>! 🎉</p>
+                <p class="modal-texto" id="online-texto">Crie uma sala e mande o link para um amigo, ou entre com o código que ele te passou.</p>
+
+                <label class="campo">
+                    <span>Seu nome</span>
+                    <input id="input-nome" type="text" maxlength="16" autocomplete="nickname" placeholder="Como quer ser chamado?" spellcheck="false">
+                </label>
+
+                <button class="botao-primario largo" id="btn-criar-sala" type="button">Criar sala</button>
+
+                <div class="divisor"><span>ou entre em uma sala</span></div>
+
+                <div class="entrar-sala">
+                    <input id="input-codigo" type="text" maxlength="5" placeholder="CÓDIGO" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código da sala">
+                    <button class="botao-secundario" id="btn-entrar-sala" type="button">Entrar</button>
+                </div>
+
+                <p class="erro-online" id="erro-online" role="alert"></p>
+            </div>
+
+            <!-- Etapa 2: sala criada, esperando alguém entrar -->
+            <div class="etapa" data-etapa="aguardando" hidden>
+                <div class="radar" aria-hidden="true"><span></span><span></span><b>📡</b></div>
+                <h2 class="modal-titulo">Sala criada!</h2>
+                <p class="modal-texto">Mande o código ou o link para seu amigo:</p>
+                <div class="codigo-sala" id="codigo-grande" aria-label="Código da sala"></div>
+                <div class="link-sala">
+                    <input id="link-sala" type="text" readonly aria-label="Link da sala">
+                    <button class="botao-secundario" id="btn-copiar-link" type="button">Copiar</button>
+                </div>
+                <button class="botao-primario largo" id="btn-compartilhar" type="button" hidden>Compartilhar link</button>
+                <p class="aguardando-texto">Aguardando adversário<span class="pontinhos" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></p>
+                <button class="botao-texto" id="btn-cancelar-sala" type="button">Fechar sala</button>
+            </div>
+
+            <!-- Etapa 3: entrando na sala de alguém -->
+            <div class="etapa" data-etapa="conectando" hidden>
+                <div class="spinner" aria-hidden="true"></div>
+                <h2 class="modal-titulo">Entrando na sala <span id="codigo-conectando"></span>…</h2>
+                <p class="modal-texto">Conectando com seu adversário.</p>
+                <button class="botao-texto" id="btn-cancelar-conexao" type="button">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
     <canvas id="fx" aria-hidden="true"></canvas>
     <script src="jokenpo.js"></script>
+    <script src="online.js"></script>
 </body>
 </html>

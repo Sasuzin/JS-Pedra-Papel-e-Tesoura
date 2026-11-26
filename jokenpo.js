@@ -62,6 +62,13 @@ const estado = {
     encerrada: false, // partida (melhor de 3/5) terminou
 };
 
+// Quem está do outro lado: o computador ou um jogador online
+const COMPUTADOR = { nome: 'Computador', emoji: '🤖', online: false };
+let adversario = { ...COMPUTADOR };
+
+// online.js é carregado depois deste arquivo; até lá (ou se falhar) o jogo segue offline
+const modoOnline = () => typeof online !== 'undefined' && online.ativo();
+
 // ---------- Elementos ----------
 
 const $ = (seletor) => document.querySelector(seletor);
@@ -76,6 +83,10 @@ const el = {
 
     placarJogador: $('#placar-jogador'),
     placarCpu: $('#placar-cpu'),
+    rotuloCpu: $('#rotulo-cpu'),
+    nomeCpu: $('#nome-cpu'),
+    seloJogador: $('#selo-jogador'),
+    seloCpu: $('#selo-cpu'),
     pontosJogador: $('#pontos-jogador'),
     pontosCpu: $('#pontos-cpu'),
     pipsJogador: $('#pips-jogador'),
@@ -116,13 +127,16 @@ const el = {
 
     btnSom: $('#btn-som'),
     btnReiniciar: $('#btn-reiniciar'),
+    toasts: $('#toasts'),
 
     modal: $('#modal'),
     modalIcone: $('#modal-icone'),
     modalTitulo: $('#modal-titulo'),
     modalPlacar: $('#modal-placar'),
     modalTexto: $('#modal-texto'),
+    modalRevanche: $('#modal-revanche'),
     btnNovamente: $('#btn-novamente'),
+    btnSairPartida: $('#btn-sair-partida'),
 };
 el.wrapJogador = el.maoJogador.parentElement;
 el.wrapCpu = el.maoCpu.parentElement;
@@ -226,6 +240,13 @@ const som = (() => {
         },
         lamento: () => [392, 370, 349.23, 293.66]
             .forEach((f, i) => tom(f, i === 3 ? 0.7 : 0.28, { tipo: 'triangle', volume: 0.08, atraso: i * 0.26 })),
+        // sons do modo online (criar: false porque podem chegar antes de qualquer clique)
+        entrou: () => [587.33, 880, 1174.66]
+            .forEach((f, i) => tom(f, 0.18, { tipo: 'triangle', volume: 0.09, atraso: i * 0.1, criar: false })),
+        saiu: () => [523.25, 392]
+            .forEach((f, i) => tom(f, 0.22, { tipo: 'triangle', volume: 0.08, atraso: i * 0.15, criar: false })),
+        pronto: () => tom(988, 0.09, { tipo: 'sine', volume: 0.07, criar: false }),
+        reacao: () => tom(740, 0.12, { tipo: 'sine', volume: 0.07, ate: 1320, criar: false }),
     };
 })();
 
@@ -354,6 +375,55 @@ function mostrarMensagem(titulo, sub = '', tipo = '') {
     reiniciarAnimacao(el.resultado, 'animar');
 }
 
+// Avisos rápidos no topo da tela
+function toast(texto, tipo = '') {
+    const aviso = document.createElement('div');
+    aviso.className = `toast ${tipo}`.trim();
+    aviso.setAttribute('role', 'status');
+    aviso.textContent = texto;
+    el.toasts.appendChild(aviso);
+    while (el.toasts.children.length > 3) el.toasts.firstElementChild.remove();
+    setTimeout(() => {
+        aviso.classList.add('saindo');
+        aviso.addEventListener('animationend', () => aviso.remove(), { once: true });
+        setTimeout(() => aviso.remove(), 600); // garante a remoção mesmo sem animação
+    }, 2800);
+}
+
+// Troca quem aparece do lado direito (computador ou jogador online)
+function definirAdversario({ nome, emoji, online: ehOnline }) {
+    adversario = { nome, emoji, online: Boolean(ehOnline) };
+    el.rotuloCpu.textContent = nome;
+    el.nomeCpu.textContent = `${emoji} ${nome}`;
+    document.body.classList.toggle('modo-online', adversario.online);
+}
+
+// Selos em cima das mãos (usados no modo online)
+function definirSelo(selo, texto, tipo) {
+    if (!texto) {
+        selo.hidden = true;
+        selo.className = 'selo';
+        return;
+    }
+    const mudou = selo.hidden || selo.dataset.tipo !== tipo;
+    selo.hidden = false;
+    selo.dataset.tipo = tipo;
+    selo.className = `selo ${tipo}`;
+    selo.textContent = texto;
+    if (tipo === 'pensando') {
+        const pontos = document.createElement('span');
+        pontos.className = 'pontinhos';
+        pontos.setAttribute('aria-hidden', 'true');
+        pontos.innerHTML = '<i>.</i><i>.</i><i>.</i>';
+        selo.appendChild(pontos);
+    }
+    if (mudou) {
+        selo.style.animation = 'none';
+        void selo.offsetWidth;
+        selo.style.animation = '';
+    }
+}
+
 function bloquearEscolhas(selecionada = null) {
     el.escolhas.forEach((botao) => {
         botao.setAttribute('aria-disabled', 'true');
@@ -443,11 +513,13 @@ function adicionarAoHistorico(escolha, cpu, resultado) {
     const rodada = totalRodadas();
     const item = document.createElement('li');
     item.className = `chip ${resultado}`;
-    item.title = `Rodada ${rodada}: ${rotulos[resultado]} (você: ${OPCOES[escolha].nome}, computador: ${OPCOES[cpu].nome})`;
+    item.title = `Rodada ${rodada}: ${rotulos[resultado]} (você: ${OPCOES[escolha].nome}, ${adversario.nome}: ${OPCOES[cpu].nome})`;
+    // só emojis fixos entram no HTML; o nome do adversário (que pode vir da rede) vai como texto
     item.innerHTML = `
         <span class="chip-n">#${rodada}</span>
         <span aria-hidden="true">${OPCOES[escolha].emoji}<small>×</small>${OPCOES[cpu].emoji}</span>
-        <span class="sr-only">${item.title}</span>`;
+        <span class="sr-only"></span>`;
+    item.querySelector('.sr-only').textContent = item.title;
     el.historico.prepend(item);
     while (el.historico.children.length > MAX_HISTORICO) el.historico.lastElementChild.remove();
     el.historicoVazio.hidden = true;
@@ -462,7 +534,7 @@ function anunciar(escolha, cpu, resultado, novoRecorde) {
         titulo = 'Você venceu! 🎉';
         sub = `${j.nome} ${j.verbo} ${c.nome.toLowerCase()}`;
     } else if (resultado === 'derrota') {
-        titulo = 'O computador venceu! 🤖';
+        titulo = adversario.online ? `${adversario.nome} venceu! 😤` : 'O computador venceu! 🤖';
         sub = `${c.nome} ${c.verbo} ${j.nome.toLowerCase()}`;
     } else {
         titulo = 'Empate! 🤝';
@@ -560,14 +632,11 @@ function vencedorDaPartida() {
     return null;
 }
 
-async function jogar(escolha) {
-    if (estado.ocupado || estado.encerrada || !OPCOES[escolha]) return;
-    estado.ocupado = true;
-    const cpu = sortear();
-
-    bloquearEscolhas(escolha);
+// Anima uma rodada completa (Jo… Ken… Pô!, revelação, placar e efeitos).
+// Quem chama já deve ter marcado estado.ocupado e bloqueado as escolhas.
+async function disputarRodada(minha, dele) {
     prepararArena();
-    mostrarMensagem('Valendo!', `Você escolheu ${OPCOES[escolha].nome.toLowerCase()}…`, 'aguardando');
+    mostrarMensagem('Valendo!', `Você escolheu ${OPCOES[minha].nome.toLowerCase()}…`, 'aguardando');
 
     // Jo… Ken… Pô!
     for (let i = 0; i < PALAVRAS.length; i++) {
@@ -577,19 +646,22 @@ async function jogar(escolha) {
         await esperar(BATIDA);
     }
 
-    const resultado = decidir(escolha, cpu);
-    revelar(escolha, cpu, resultado);
+    const resultado = decidir(minha, dele);
+    revelar(minha, dele, resultado);
     const novoRecorde = registrar(resultado);
     renderizarPlacar();
     renderizarEstatisticas({ novoRecorde, animarSequencia: resultado === 'vitoria' });
-    adicionarAoHistorico(escolha, cpu, resultado);
-    anunciar(escolha, cpu, resultado, novoRecorde);
+    adicionarAoHistorico(minha, dele, resultado);
+    anunciar(minha, dele, resultado, novoRecorde);
     efeitos(resultado);
 
     await esperar(MOVIMENTO_REDUZIDO ? 150 : 400);
     el.arena.classList.remove('jogando');
+    return vencedorDaPartida();
+}
 
-    const vencedor = vencedorDaPartida();
+// Depois da animação: abre o fim de partida ou libera a próxima rodada
+async function finalizarRodada(vencedor) {
     if (vencedor) {
         estado.encerrada = true;
         await esperar(MOVIMENTO_REDUZIDO ? 300 : 900);
@@ -605,6 +677,16 @@ async function jogar(escolha) {
             }
         }, 700);
     }
+    if (typeof online !== 'undefined') online.depoisDaRodada();
+}
+
+// Rodada contra o computador
+async function jogar(escolha) {
+    if (estado.ocupado || estado.encerrada || !OPCOES[escolha]) return;
+    estado.ocupado = true;
+    bloquearEscolhas(escolha);
+    const vencedor = await disputarRodada(escolha, sortear());
+    await finalizarRodada(vencedor);
 }
 
 // ---------- Partida, modos e modal ----------
@@ -634,13 +716,17 @@ function reiniciarPartida(titulo, sub) {
 
 function reiniciar() {
     if (estado.ocupado || !el.modal.hidden) return;
+    if (modoOnline()) {
+        online.reiniciar();
+        return;
+    }
     reiniciarAnimacao(el.btnReiniciar, 'girando');
     som.clique();
     reiniciarPartida('Placar zerado!', 'Bora de novo? Escolha sua jogada 💪');
 }
 
-function mudarModo(modo) {
-    if (estado.ocupado || !MODOS[modo] || modo === estado.modo || !el.modal.hidden) return;
+// Só a parte visual e o estado do seletor de modo (sem zerar nada)
+function aplicarModo(modo) {
     estado.modo = modo;
     el.modos.forEach((botao, i) => {
         const ativo = botao.dataset.modo === modo;
@@ -648,21 +734,40 @@ function mudarModo(modo) {
         botao.setAttribute('aria-pressed', String(ativo));
         if (ativo) el.modosBox.style.setProperty('--idx', i);
     });
+    renderizarPips();
+}
+
+function mudarModo(modo) {
+    if (estado.ocupado || !MODOS[modo] || modo === estado.modo || !el.modal.hidden) return;
+    if (modoOnline()) {
+        online.mudarModo(modo);
+        return;
+    }
+    aplicarModo(modo);
     som.clique();
     reiniciarPartida(MODOS[modo].titulo, MODOS[modo].texto);
 }
 
+let timerModal = null;
+
 function abrirModal(vencedor) {
     const venceu = vencedor === 'jogador';
-    el.modalIcone.textContent = venceu ? '🏆' : '🤖';
-    el.modalTitulo.textContent = venceu ? 'Você venceu a partida!' : 'O computador levou essa!';
+    const contraAmigo = adversario.online;
+    el.modalIcone.textContent = venceu ? '🏆' : contraAmigo ? '😵' : '🤖';
+    if (venceu) el.modalTitulo.textContent = 'Você venceu a partida!';
+    else el.modalTitulo.textContent = contraAmigo ? `${adversario.nome} venceu a partida!` : 'O computador levou essa!';
     el.modalPlacar.innerHTML = `<span class="mj">${estado.jogador}</span> × <span class="mc">${estado.computador}</span>`;
     el.modalTexto.textContent = venceu
         ? 'Mandou muito bem! Que tal mais uma?'
         : 'Não foi dessa vez… bora pra revanche?';
-    el.btnNovamente.textContent = venceu ? 'Jogar de novo' : 'Quero revanche';
+    if (contraAmigo) el.btnNovamente.textContent = 'Pedir revanche';
+    else el.btnNovamente.textContent = venceu ? 'Jogar de novo' : 'Quero revanche';
+    el.btnNovamente.disabled = false;
+    el.btnSairPartida.hidden = !contraAmigo;
+    el.modalRevanche.textContent = '';
     el.modal.classList.toggle('derrota', !venceu);
 
+    clearTimeout(timerModal);
     el.app.inert = true;
     el.modal.hidden = false;
     void el.modal.offsetWidth;
@@ -678,13 +783,21 @@ function abrirModal(vencedor) {
     }
 }
 
-function fecharModal() {
-    if (el.modal.hidden || !el.modal.classList.contains('aberto')) return;
+// Fecha o fim de partida sem mexer no placar
+function esconderModal() {
+    if (el.modal.hidden) return;
     el.modal.classList.remove('aberto');
     el.app.inert = false;
-    setTimeout(() => {
+    clearTimeout(timerModal);
+    timerModal = setTimeout(() => {
         el.modal.hidden = true;
     }, 300);
+}
+
+// Contra o computador: fechar o fim de partida já começa outra
+function fecharModal() {
+    if (el.modal.hidden || !el.modal.classList.contains('aberto') || adversario.online) return;
+    esconderModal();
     som.clique();
     reiniciarPartida('Nova partida!', MODOS[estado.modo].texto);
 }
@@ -737,12 +850,15 @@ function criarOndinha(botao, evento) {
 }
 
 function escolher(botao, evento) {
-    if (estado.ocupado || estado.encerrada) {
+    const bloqueado = estado.ocupado || estado.encerrada || (modoOnline() && !online.podeJogar());
+    if (bloqueado) {
         if (!botao.classList.contains('selecionada')) reiniciarAnimacao(botao, 'negada');
+        if (modoOnline()) online.explicarBloqueio();
         return;
     }
     criarOndinha(botao, evento);
-    jogar(botao.dataset.escolha);
+    if (modoOnline()) online.jogar(botao.dataset.escolha);
+    else jogar(botao.dataset.escolha);
 }
 
 // ---------- Fundo com mãozinhas flutuando ----------
@@ -786,7 +902,11 @@ function ligarEventos() {
     el.modos.forEach((botao) => botao.addEventListener('click', () => mudarModo(botao.dataset.modo)));
     el.btnSom.addEventListener('click', alternarSom);
     el.btnReiniciar.addEventListener('click', reiniciar);
-    el.btnNovamente.addEventListener('click', fecharModal);
+    el.btnNovamente.addEventListener('click', () => {
+        if (adversario.online) online.pedirRevanche();
+        else fecharModal();
+    });
+    el.btnSairPartida.addEventListener('click', () => online.sair());
     el.modal.addEventListener('click', (e) => {
         if (e.target === el.modal) fecharModal();
     });
@@ -794,10 +914,16 @@ function ligarEventos() {
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
 
+        // janelas abertas vêm primeiro: o Esc fecha mesmo com o cursor num campo de texto
         if (!el.modal.hidden) {
             if (e.key === 'Escape') fecharModal();
             return;
         }
+        if (typeof online !== 'undefined' && online.painelAberto()) {
+            if (e.key === 'Escape') online.fecharPainel();
+            return;
+        }
+        if (e.target instanceof HTMLElement && e.target.matches('input, textarea, select')) return;
 
         const escolha = TECLAS[e.key];
         if (escolha) {
@@ -826,6 +952,8 @@ function iniciar() {
     renderizarPlacar();
     renderizarEstatisticas();
     ligarEventos();
+    if (typeof online !== 'undefined') online.iniciar();
 }
 
-iniciar();
+// Espera o online.js (carregado logo depois deste arquivo) antes de iniciar
+document.addEventListener('DOMContentLoaded', iniciar);
