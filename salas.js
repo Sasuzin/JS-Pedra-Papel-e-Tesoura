@@ -37,7 +37,7 @@ const salas = (() => {
     // só aceita texto: um objeto com toString malicioso não pode quebrar a lista
     function limparNome(nome) {
         return (typeof nome === 'string' ? nome : '')
-            .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '')
+            .replace(/[\u0000-\u001f\u007f-\u009f\u200b\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
             .replace(/\s+/g, ' ')
             .trim()
             .slice(0, 16);

@@ -297,10 +297,45 @@
         </div>
     </div>
 
+    <!-- Chat da sala (só aparece numa partida online) -->
+    <button class="botao-chat" id="btn-chat" type="button" aria-label="Abrir o chat da sala" aria-expanded="false" aria-controls="chat" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span class="chat-badge" id="chat-badge" hidden>0</span>
+    </button>
+    <div class="chat-previa" id="chat-previa" aria-hidden="true" hidden></div>
+
+    <section class="chat" id="chat" aria-labelledby="chat-titulo" tabindex="-1" hidden>
+        <header class="chat-topo">
+            <div class="chat-titulos">
+                <h2 id="chat-titulo">Chat da sala</h2>
+                <span class="chat-com" id="chat-com"></span>
+            </div>
+            <button class="fechar" id="btn-fechar-chat" type="button" aria-label="Fechar o chat">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </header>
+        <ol class="chat-mensagens" id="chat-mensagens" aria-live="polite" aria-relevant="additions"></ol>
+        <div class="chat-rapidas" role="group" aria-label="Mensagens rápidas">
+            <button class="chat-rapida" type="button">Boa! 👏</button>
+            <button class="chat-rapida" type="button">GG 🤝</button>
+            <button class="chat-rapida" type="button">Bora revanche? 🔥</button>
+            <button class="chat-rapida" type="button">Que sorte! 😅</button>
+        </div>
+        <form class="chat-form" id="chat-form" autocomplete="off">
+            <input id="chat-input" type="text" maxlength="200" placeholder="Escreva uma mensagem…" aria-label="Mensagem para o adversário" spellcheck="true">
+            <button class="chat-enviar" id="chat-enviar" type="submit" aria-label="Enviar mensagem">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            </button>
+        </form>
+    </section>
+    <!-- anuncia mensagens novas para leitores de tela mesmo com o chat fechado -->
+    <div class="sr-only" id="chat-anuncio" aria-live="polite"></div>
+
     <div class="toasts" id="toasts" aria-live="polite"></div>
     <canvas id="fx" aria-hidden="true"></canvas>
     <script src="jokenpo.js"></script>
     <script src="salas.js"></script>
+    <script src="chat.js"></script>
     <script src="online.js"></script>
 </body>
 </html>

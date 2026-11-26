@@ -772,7 +772,10 @@ function abrirModal(vencedor) {
     el.modal.hidden = false;
     void el.modal.offsetWidth;
     el.modal.classList.add('aberto');
-    el.btnNovamente.focus();
+    // quem está escrevendo no chat continua lá (senão o próximo Espaço/Enter pediria revanche)
+    const painelChat = document.getElementById('chat');
+    const escrevendoNoChat = painelChat && !painelChat.hidden && painelChat.contains(document.activeElement);
+    if (!escrevendoNoChat) el.btnNovamente.focus();
 
     if (venceu) {
         som.fanfarra();
@@ -952,6 +955,7 @@ function iniciar() {
     renderizarPlacar();
     renderizarEstatisticas();
     ligarEventos();
+    if (typeof chat !== 'undefined') chat.iniciar();
     if (typeof online !== 'undefined') online.iniciar();
 }
 

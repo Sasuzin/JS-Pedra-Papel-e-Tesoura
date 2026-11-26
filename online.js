@@ -69,8 +69,15 @@ const online = (() => {
 
     const ui = {};
 
-    // salas.js pode não ter carregado (arquivo faltando): o resto do modo online segue funcionando
+    // salas.js / chat.js podem não ter carregado (arquivo faltando): o resto do modo online segue funcionando
     const saguao = () => (typeof salas !== 'undefined' ? salas : null);
+    const conversa = () => (typeof chat !== 'undefined' ? chat : null);
+
+    // Mensagem do chat para o adversário (o chat.js já limpou o texto)
+    function enviarChat(texto) {
+        if (s.status !== 'jogando' || typeof texto !== 'string' || !texto) return false;
+        return enviar({ t: 'chat', x: texto });
+    }
 
     // ---------- Utilidades ----------
 
@@ -103,7 +110,7 @@ const online = (() => {
     // só aceita texto: um objeto com toString malicioso não pode quebrar nada
     function limparNome(nome) {
         return (typeof nome === 'string' ? nome : '')
-            .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '')
+            .replace(/[\u0000-\u001f\u007f-\u009f\u200b\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '')
             .replace(/\s+/g, ' ')
             .trim()
             .slice(0, 16);
@@ -406,6 +413,10 @@ const online = (() => {
             receberReacao(msg);
             return;
         }
+        if (msg.t === 'chat') {
+            if (conversa()) conversa().receber(msg.x); // o chat.js limpa e valida o texto
+            return;
+        }
         const tratar = { nova: receberNova, escolhi: receberLacre, revelo: receberJogada, revanche: receberRevanche }[msg.t];
         if (!tratar) return;
         // "nova" espera a animação da rodada acabar. Se tem algo na fila, as jogadas seguintes
@@ -430,6 +441,7 @@ const online = (() => {
         s.status = 'jogando';
         s.nomeAdversario = limparNome(msg.nome) || 'Adversário';
         definirAdversario({ nome: s.nomeAdversario, emoji: '👤', online: true });
+        if (conversa()) conversa().comecar(s.nomeAdversario);
         const focoNoPainel = ui.modal.contains(document.activeElement);
         fecharPainel({ devolverFoco: false });
         mostrarInterfaceOnline();
@@ -488,6 +500,13 @@ const online = (() => {
         reiniciarPartida(titulo, sub);
         renderizarSelos();
         atualizarBarra();
+        // registra no chat quando a partida recomeça (revanche, novo modo, placar zerado)
+        const avisosNoChat = {
+            modo: `Modo de jogo: ${MODOS[estado.modo].titulo}.`,
+            reinicio: 'Placar zerado! 🔄',
+            revanche: 'Revanche! 🔥 Nova partida começou.',
+        };
+        if (avisosNoChat[motivo] && conversa()) conversa().sistema(avisosNoChat[motivo]);
     }
 
     // Só o dono da sala começa partidas; o convidado segue o número que ele mandar
@@ -773,6 +792,7 @@ const online = (() => {
 
     // Dono da sala esperando alguém (logo depois de criar, ou quando o adversário sai)
     function entrarEmEspera({ titulo, sub }) {
+        const focoNoChat = conversa() ? conversa().encerrar() : false; // sem adversário, sem conversa
         s.status = 'aguardando';
         s.nomeAdversario = '';
         s.adversarioEscondido = false;
@@ -788,6 +808,7 @@ const online = (() => {
         bloquearEscolhas();
         renderizarSelos();
         if (s.salaPublica) anunciarSala();
+        if (focoNoChat) ui.btnCopiarBarra.focus({ preventScroll: true }); // o chat sumiu: foco vai para a barra da sala
     }
 
     function definirAvisoVisibilidade(texto, tipo) {
@@ -904,8 +925,9 @@ const online = (() => {
     }
 
     function voltarAoComputador(titulo, sub) {
+        const focoNoChat = conversa() ? conversa().encerrar() : false;
         const ativoAntes = document.activeElement;
-        const focoPerdido = ativoAntes === document.body || el.modal.contains(ativoAntes)
+        const focoPerdido = focoNoChat || ativoAntes === document.body || el.modal.contains(ativoAntes)
             || ui.modal.contains(ativoAntes) || ui.barra.contains(ativoAntes);
         fecharPainel({ devolverFoco: false });
         esconderModal();
@@ -1445,5 +1467,6 @@ const online = (() => {
         reiniciar,
         painelAberto,
         fecharPainel,
+        enviarChat,
     };
 })();
