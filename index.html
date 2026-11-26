@@ -3,32 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="JoKenPô: pedra, papel e tesoura contra o computador.">
+    <meta name="theme-color" content="#0b0720">
     <title>JoKenPô</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%8A%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <h1>JoKenPô</h1>
-    <h3>Jogador:</h3>
-    <span id="jogador-pontos">0</span>
-    <img src="pedra.png" alt="pedra">    
-    <img src="papel.png" alt="papel">
-    <img src="tesoura.png" alt="tesoura">
-    <form name = "frmJokenpo">
-        <input type="radio" name="grupo" id="pedra">Pedra
-        <input type="radio" name="grupo" id="papel">Papel
-        <input type="radio" name="grupo" id="tesoura">Tesoura    
-    <p>
-        <input type="button" value=" JOGAR " onclick="jogar()">
-        <input type="reset" value=" RESET " onclick="resetar()">
-    </p>
-</form>
-<hr>
-<h3>Computador:</h3>
-<span id="jogador-pontos">0</span>
-<img src="pc.png" alt="pc" id="pc">
-<hr>
-<!-- A linha abaixo exibe o resultado após a jogada -->
-<h3 id="resultado"></h3>
-<script src="jokenpo.js"></script>
+    <!-- Fundo animado -->
+    <div class="fundo" aria-hidden="true">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="maos-flutuantes" id="maos-flutuantes"></div>
+    </div>
+    <div class="flash" id="flash" aria-hidden="true"></div>
+
+    <main class="app" id="app">
+        <!-- Topo: logo, modos de jogo e ações -->
+        <header class="topo entrar" style="--d:0">
+            <h1 class="logo" aria-label="JoKenPô">
+                <span class="l-jo" style="--i:0" aria-hidden="true">J</span>
+                <span class="l-jo" style="--i:1" aria-hidden="true">o</span>
+                <span class="l-ken" style="--i:2" aria-hidden="true">K</span>
+                <span class="l-ken" style="--i:3" aria-hidden="true">e</span>
+                <span class="l-ken" style="--i:4" aria-hidden="true">n</span>
+                <span class="l-po" style="--i:5" aria-hidden="true">P</span>
+                <span class="l-po" style="--i:6" aria-hidden="true">ô</span>
+            </h1>
+
+            <div class="modos" id="modos" role="group" aria-label="Modo de jogo">
+                <span class="modo-indicador" aria-hidden="true"></span>
+                <button class="modo ativo" type="button" data-modo="livre" aria-pressed="true">Livre</button>
+                <button class="modo" type="button" data-modo="md3" aria-pressed="false">Melhor de 3</button>
+                <button class="modo" type="button" data-modo="md5" aria-pressed="false">Melhor de 5</button>
+            </div>
+
+            <div class="acoes">
+                <button class="botao-icone" id="btn-som" type="button" aria-label="Som" aria-pressed="true" title="Som (M)">
+                    <svg class="ic-som-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+                    <svg class="ic-som-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/></svg>
+                </button>
+                <button class="botao-icone" id="btn-reiniciar" type="button" aria-label="Reiniciar placar" title="Reiniciar placar (R)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Placar -->
+        <section class="placar entrar" style="--d:1" aria-label="Placar">
+            <div class="card pontuacao jogador" id="placar-jogador">
+                <span class="coroa" aria-hidden="true">👑</span>
+                <span class="rotulo">Você</span>
+                <span class="pontos" id="pontos-jogador">0</span>
+                <div class="pips" id="pips-jogador" hidden></div>
+            </div>
+            <div class="placar-meio">
+                <span class="x" aria-hidden="true">×</span>
+                <span class="meta">Rodadas <b id="rodadas">0</b></span>
+                <span class="meta">Empates <b id="empates">0</b></span>
+            </div>
+            <div class="card pontuacao cpu" id="placar-cpu">
+                <span class="coroa" aria-hidden="true">👑</span>
+                <span class="rotulo">Computador</span>
+                <span class="pontos" id="pontos-cpu">0</span>
+                <div class="pips" id="pips-cpu" hidden></div>
+            </div>
+        </section>
+
+        <!-- Arena: as duas mãos se enfrentam -->
+        <section class="card arena entrar" id="arena" style="--d:2" aria-label="Arena">
+            <div class="lutador jogador" id="lutador-jogador">
+                <div class="palco" id="palco-jogador">
+                    <span class="onda" aria-hidden="true"></span>
+                    <div class="mao-wrap ocioso"><span class="mao" id="mao-jogador" aria-hidden="true">✊</span></div>
+                </div>
+                <span class="nome-lutador">🧑 Você</span>
+            </div>
+
+            <div class="versus" id="versus" aria-hidden="true">
+                <span class="contagem" id="contagem">VS</span>
+            </div>
+
+            <div class="lutador cpu" id="lutador-cpu">
+                <div class="palco" id="palco-cpu">
+                    <span class="onda" aria-hidden="true"></span>
+                    <div class="mao-wrap ocioso"><span class="mao" id="mao-cpu" aria-hidden="true">✊</span></div>
+                </div>
+                <span class="nome-lutador">🤖 Computador</span>
+            </div>
+        </section>
+
+        <!-- Resultado da rodada -->
+        <div class="resultado entrar" id="resultado" style="--d:3" aria-live="polite">
+            <p class="resultado-titulo" id="resultado-titulo">Escolha sua jogada!</p>
+            <p class="resultado-sub" id="resultado-sub">Clique em uma opção ou use as teclas 1, 2 e 3</p>
+        </div>
+
+        <!-- Opções do jogador -->
+        <section class="escolhas entrar" style="--d:4" aria-label="Sua jogada">
+            <button class="escolha" type="button" data-escolha="pedra" aria-label="Jogar pedra (tecla 1)">
+                <span class="emoji" aria-hidden="true">✊</span>
+                <span class="nome-escolha">Pedra</span>
+                <kbd aria-hidden="true">1</kbd>
+            </button>
+            <button class="escolha" type="button" data-escolha="papel" aria-label="Jogar papel (tecla 2)">
+                <span class="emoji" aria-hidden="true">✋</span>
+                <span class="nome-escolha">Papel</span>
+                <kbd aria-hidden="true">2</kbd>
+            </button>
+            <button class="escolha" type="button" data-escolha="tesoura" aria-label="Jogar tesoura (tecla 3)">
+                <span class="emoji" aria-hidden="true">✌️</span>
+                <span class="nome-escolha">Tesoura</span>
+                <kbd aria-hidden="true">3</kbd>
+            </button>
+        </section>
+
+        <!-- Estatísticas e histórico -->
+        <div class="painel entrar" style="--d:5">
+            <section class="card estatisticas" aria-label="Estatísticas">
+                <div class="stats">
+                    <div class="stat" id="stat-sequencia">
+                        <span class="stat-icone" aria-hidden="true">🔥</span>
+                        <span class="stat-valor" id="sequencia">0</span>
+                        <span class="stat-rotulo">Sequência</span>
+                    </div>
+                    <div class="stat" id="stat-recorde">
+                        <span class="stat-icone" aria-hidden="true">🏅</span>
+                        <span class="stat-valor" id="recorde">0</span>
+                        <span class="stat-rotulo">Recorde</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-icone" aria-hidden="true">🎯</span>
+                        <span class="stat-valor" id="aproveitamento">0%</span>
+                        <span class="stat-rotulo">Vitórias</span>
+                    </div>
+                </div>
+                <div class="barra" id="barra" role="img" aria-label="Nenhuma rodada jogada">
+                    <span class="barra-v" id="barra-v"></span>
+                    <span class="barra-e" id="barra-e"></span>
+                    <span class="barra-d" id="barra-d"></span>
+                </div>
+                <div class="legenda">
+                    <span class="lg-v"><i></i>Vitórias <b id="leg-v">0</b></span>
+                    <span class="lg-e"><i></i>Empates <b id="leg-e">0</b></span>
+                    <span class="lg-d"><i></i>Derrotas <b id="leg-d">0</b></span>
+                </div>
+            </section>
+
+            <section class="card historico" aria-label="Histórico de rodadas">
+                <div class="historico-topo">
+                    <h2>Histórico</h2>
+                    <span class="dica"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> jogar · <kbd>R</kbd> reiniciar · <kbd>M</kbd> som</span>
+                </div>
+                <ol class="historico-lista" id="historico"></ol>
+                <p class="historico-vazio" id="historico-vazio">Nenhuma rodada ainda. Faça sua primeira jogada!</p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Fim de partida (modos Melhor de 3 / Melhor de 5) -->
+    <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" hidden>
+        <div class="modal-card">
+            <div class="modal-raios" aria-hidden="true"></div>
+            <span class="modal-icone" id="modal-icone" aria-hidden="true">🏆</span>
+            <h2 class="modal-titulo" id="modal-titulo">Você venceu a partida!</h2>
+            <p class="modal-placar" id="modal-placar"></p>
+            <p class="modal-texto" id="modal-texto"></p>
+            <button class="botao-primario" id="btn-novamente" type="button">Jogar de novo</button>
+        </div>
+    </div>
+
+    <canvas id="fx" aria-hidden="true"></canvas>
+    <script src="jokenpo.js"></script>
 </body>
 </html>
