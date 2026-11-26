@@ -1247,6 +1247,63 @@ button {
     color: var(--suave);
 }
 
+/* ---------- Rodapé ---------- */
+
+.rodape {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 14px;
+    padding-top: 6px;
+    font-size: 0.92rem;
+    color: var(--suave);
+    text-align: center;
+}
+
+.rodape strong {
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--jogador), var(--roxo), var(--cpu));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.linkedin {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-weight: 500;
+    color: var(--texto);
+    text-decoration: none;
+    background: rgba(10, 102, 194, 0.18);
+    border: 1px solid rgba(10, 102, 194, 0.6);
+    transition: transform 0.25s var(--mola), background 0.25s, box-shadow 0.25s;
+}
+
+.linkedin svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    transition: transform 0.4s var(--mola);
+}
+
+.linkedin:hover {
+    transform: translateY(-2px) scale(1.04);
+    background: #0a66c2;
+    box-shadow: 0 10px 24px -10px #0a66c2;
+}
+
+.linkedin:hover svg {
+    transform: rotate(-10deg) scale(1.15);
+}
+
+.linkedin:active {
+    transform: scale(0.95);
+}
+
 /* ---------- Modal de fim de partida ---------- */
 
 .modal {
