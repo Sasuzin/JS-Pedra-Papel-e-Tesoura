@@ -27,7 +27,7 @@
 | | |
 |---|---|
 | 🎬 **Jo… Ken… Pô!** | As mãos sobem e descem no ritmo da contagem e se revelam com onda de choque e faíscas |
-| 🌐 **Online com um amigo** | Crie uma sala, mande o link e joguem um contra o outro em tempo real |
+| 🌐 **Online** | Entre numa sala aberta da lista ou crie a sua, pública ou privada, e jogue contra outra pessoa em tempo real |
 | 🏆 **Melhor de 3 e de 5** | Bolinhas de progresso, coroa para quem lidera e tela de fim de partida com revanche |
 | 🎉 **Efeitos** | Confete na vitória, tela tremendo na derrota, clarões coloridos e sons gerados na hora |
 | 📊 **Estatísticas** | Sequência de vitórias, recorde salvo no navegador, % de vitórias e histórico das rodadas |
@@ -35,15 +35,24 @@
 
 ## 🌐 Jogando online
 
-1. Abra o jogo e clique em **Online**, no canto superior direito.
-2. Digite seu nome e clique em **Criar sala**. Aparece um código de 5 letras e um link.
-3. Mande o link para um amigo (ou passe o código). Ele abre, digita o nome e clica em **Entrar**.
-4. Pronto! Cada um escolhe sua jogada e as mãos se revelam ao mesmo tempo. Ainda dá para mandar reações 👏 😂 😱 🔥 😎
+Clique em **Online**, no canto superior direito, digite seu nome e escolha como quer jogar:
+
+| | Como funciona |
+|---|---|
+| 🟢 **Entrar numa sala aberta** | A lista **Salas abertas** mostra, ao vivo, quem está esperando um adversário. É só clicar em **Entrar**. |
+| ⚡ **Jogar com qualquer um** | Entra na sala aberta mais antiga. Se não tiver nenhuma, cria uma pública e você espera alguém chegar. |
+| 🌐 **Criar sala pública** | Sua sala aparece na lista para qualquer pessoa entrar. |
+| 🔒 **Criar sala privada** | Não aparece na lista: só entra quem tiver o código de 5 letras ou o link que você mandar. |
+
+Depois é só jogar: cada um escolhe sua jogada e as mãos se revelam ao mesmo tempo. Ainda dá para mandar reações 👏 😂 😱 🔥 😎
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/sala.jpg" alt="Sala criada, com o código de 5 letras e o link para compartilhar" width="400"><br><sub><b>Sala criada:</b> é só mandar o link</sub></td>
-    <td align="center"><img src="docs/screenshots/online.jpg" alt="Partida online entre Ana e Beto, com placar, resultado e uma reação na tela" width="400"><br><sub><b>Partida valendo</b> contra um amigo</sub></td>
+    <td align="center" width="34%"><img src="docs/screenshots/saguao.jpg" alt="Lista de salas abertas no celular, com a sala da Ana esperando adversário" width="250"><br><sub><b>Salas abertas</b>, ao vivo</sub></td>
+    <td align="center"><img src="docs/screenshots/sala.jpg" alt="Sala pública criada, com o código de 5 letras e o link para compartilhar" width="520"><br><sub><b>Sala criada:</b> pública ou privada, com código e link</sub></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><img src="docs/screenshots/online.jpg" alt="Partida online entre Ana e Beto, com placar, resultado e uma reação na tela" width="780"><br><sub><b>Partida valendo</b> contra outra pessoa, em tempo real</sub></td>
   </tr>
 </table>
 
@@ -56,6 +65,8 @@
 
 - Os dois navegadores conversam **direto entre si** por **WebRTC**, usando a biblioteca [PeerJS](https://peerjs.com/).
 - O servidor público do PeerJS só faz a apresentação inicial entre os jogadores. Por isso o jogo não precisa de backend e roda 100% no **GitHub Pages**.
+- A lista de **salas abertas** usa **MQTT**, um "mural" de mensagens em tempo real: cada sala pública é anunciada em dois servidores públicos (HiveMQ e EMQX), para a lista continuar funcionando mesmo se um deles cair. Na lista aparecem só o nome de quem criou, o modo de jogo e há quanto tempo a sala está esperando.
+- A sala sai da lista sozinha quando alguém entra, quando o dono sai ou quando a aba dele fecha.
 - Quem cria a sala comanda o modo de jogo e o placar; o convidado acompanha.
 - Se alguém fecha a aba ou a conexão cai, o outro é avisado na hora. Quem criou a sala continua esperando um novo adversário.
 - Em redes muito restritas (algumas redes de empresa ou de faculdade), a conexão direta pode ser bloqueada.
@@ -90,6 +101,7 @@
 - **Canvas 2D**: confetes e faíscas
 - **Web Audio API**: todos os sons são sintetizados na hora, sem nenhum arquivo de áudio
 - **WebRTC + PeerJS**: modo online sem servidor próprio
+- **MQTT (mqtt.js)**: lista de salas abertas em tempo real
 - **Web Crypto (SHA-256)**: o lacre das jogadas online
 - **localStorage**: recorde, nome e preferência de som
 
@@ -111,6 +123,7 @@ Depois abra <http://localhost:8000>. Para jogar só contra o computador, também
  ┣ 🎨 index.css    → visual, animações e responsividade
  ┣ 🎮 jokenpo.js   → regras, animações, placar, sons e efeitos
  ┣ 🌐 online.js    → salas online (PeerJS + lacre das jogadas)
+ ┣ 📋 salas.js     → lista de salas públicas (MQTT)
  ┗ 🖼️ docs/        → imagens deste README
 ```
 
