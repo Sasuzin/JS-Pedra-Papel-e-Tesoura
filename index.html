@@ -61,7 +61,7 @@
         <section class="card barra-online entrar" id="barra-online" aria-label="Sala online" hidden>
             <span class="online-ponto" id="online-ponto" aria-hidden="true"></span>
             <div class="online-info">
-                <span class="online-sala">Sala <b id="online-codigo">-----</b></span>
+                <span class="online-sala">Sala <b id="online-codigo">-----</b> <span class="online-tipo" id="online-tipo"></span></span>
                 <span class="online-status" id="online-status" aria-live="polite">Aguardando adversário…</span>
             </div>
             <div class="online-acoes">
@@ -231,16 +231,37 @@
                 <span class="modal-icone online-icone" aria-hidden="true">🌐</span>
                 <h2 class="modal-titulo" id="online-titulo">Jogar online</h2>
                 <p class="convite" id="convite" hidden>Você foi convidado para a sala <b id="convite-codigo"></b>! 🎉</p>
-                <p class="modal-texto" id="online-texto">Crie uma sala e mande o link para um amigo, ou entre com o código que ele te passou.</p>
+                <p class="modal-texto" id="online-texto">Entre numa sala aberta, crie a sua ou use o código que um amigo te passou.</p>
 
                 <label class="campo">
                     <span>Seu nome</span>
                     <input id="input-nome" type="text" maxlength="16" autocomplete="nickname" placeholder="Como quer ser chamado?" spellcheck="false">
                 </label>
 
-                <button class="botao-primario largo" id="btn-criar-sala" type="button">Criar sala</button>
+                <!-- Salas públicas esperando adversário (atualiza sozinha) -->
+                <section class="saguao" aria-labelledby="saguao-titulo">
+                    <div class="saguao-topo">
+                        <h3 id="saguao-titulo">Salas abertas</h3>
+                        <span class="saguao-status" id="saguao-status" aria-live="polite">Procurando…</span>
+                    </div>
+                    <ul class="saguao-lista" id="saguao-lista"></ul>
+                    <p class="saguao-vazio" id="saguao-vazio">Procurando salas abertas…</p>
+                    <button class="botao-secundario largo" id="btn-qualquer-um" type="button">⚡ Jogar com qualquer um</button>
+                </section>
 
-                <div class="divisor"><span>ou entre em uma sala</span></div>
+                <div class="divisor"><span>ou crie a sua sala</span></div>
+
+                <div class="visibilidade" role="group" aria-label="Quem pode entrar na sala">
+                    <button class="vis-opcao" type="button" data-vis="publica" aria-pressed="true">
+                        <span>🌐 Pública</span><small>Aparece na lista</small>
+                    </button>
+                    <button class="vis-opcao" type="button" data-vis="privada" aria-pressed="false">
+                        <span>🔒 Privada</span><small>Só com o código</small>
+                    </button>
+                </div>
+                <button class="botao-primario largo" id="btn-criar-sala" type="button">Criar sala pública</button>
+
+                <div class="divisor"><span>tem um código?</span></div>
 
                 <div class="entrar-sala">
                     <input id="input-codigo" type="text" maxlength="5" placeholder="CÓDIGO" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Código da sala">
@@ -254,6 +275,7 @@
             <div class="etapa" data-etapa="aguardando" hidden>
                 <div class="radar" aria-hidden="true"><span></span><span></span><b>📡</b></div>
                 <h2 class="modal-titulo">Sala criada!</h2>
+                <p class="aviso-visibilidade" id="aviso-visibilidade"></p>
                 <p class="modal-texto">Mande o código ou o link para seu amigo:</p>
                 <div class="codigo-sala" id="codigo-grande" aria-label="Código da sala"></div>
                 <div class="link-sala">
@@ -278,6 +300,7 @@
     <div class="toasts" id="toasts" aria-live="polite"></div>
     <canvas id="fx" aria-hidden="true"></canvas>
     <script src="jokenpo.js"></script>
+    <script src="salas.js"></script>
     <script src="online.js"></script>
 </body>
 </html>

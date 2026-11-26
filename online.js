@@ -31,6 +31,7 @@ const online = (() => {
     const CONEXAO_MS = 15000; // tempo máximo para entrar numa sala
     const SERVIDOR_MS = 12000; // tempo máximo para falar com o servidor do PeerJS
     const CHAVE_NOME = 'jokenpo:nome';
+    const CHAVE_PUBLICA = 'jokenpo:sala-publica';
     const REACOES = ['👏', '😂', '😱', '🔥', '😎'];
     const MOTIVOS = ['inicio', 'modo', 'reinicio', 'revanche'];
 
@@ -60,9 +61,16 @@ const online = (() => {
         adversarioEscondido: false, // a aba do outro jogador está em segundo plano
         ultimaReacao: 0,
         reacoesRecebidas: [],
+        prefPublica: true, // escolha do botão Pública/Privada
+        salaPublica: false, // a sala que eu criei aparece na lista?
+        veioDaLista: false, // entrei clicando numa sala da lista
+        criadaEm: 0, // quando criei a sala (a lista mostra "há X min")
     };
 
     const ui = {};
+
+    // salas.js pode não ter carregado (arquivo faltando): o resto do modo online segue funcionando
+    const saguao = () => (typeof salas !== 'undefined' ? salas : null);
 
     // ---------- Utilidades ----------
 
@@ -92,9 +100,10 @@ const online = (() => {
     const lacrar = (papel, escolha, sal, partida, rodada) => sha256(`${papel}:${escolha}:${sal}:${partida}:${rodada}`);
     const papelDoAdversario = () => (s.papel === 'dono' ? 'convidado' : 'dono');
 
+    // só aceita texto: um objeto com toString malicioso não pode quebrar nada
     function limparNome(nome) {
-        return String(nome ?? '')
-            .replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁦-⁩]/g, '')
+        return (typeof nome === 'string' ? nome : '')
+            .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '')
             .replace(/\s+/g, ' ')
             .trim()
             .slice(0, 16);
@@ -209,6 +218,8 @@ const online = (() => {
         peer.on('disconnected', () => {
             if (peer !== s.peer || peer.destroyed) return;
             atualizarBarra();
+            // sem o servidor do PeerJS ninguém consegue entrar: tira a sala da lista até voltar
+            if (s.papel === 'dono' && s.status === 'aguardando' && s.salaPublica && saguao()) saguao().retirar();
             if (s.tentativasServidor >= 5) return;
             s.tentativasServidor += 1;
             setTimeout(() => {
@@ -219,6 +230,7 @@ const online = (() => {
             if (peer !== s.peer) return;
             s.tentativasServidor = 0;
             atualizarBarra();
+            if (s.papel === 'dono' && s.status === 'aguardando' && s.salaPublica) anunciarSala();
         });
     }
 
@@ -345,7 +357,9 @@ const online = (() => {
             tentativasServidor: 0,
             partida: 0,
             adversarioEscondido: false,
+            salaPublica: false,
         });
+        if (saguao()) saguao().retirar(); // tira a sala da lista pública
         zerarPartida();
         // um tempinho para o "tchau" sair antes de fechar tudo
         setTimeout(() => {
@@ -425,6 +439,7 @@ const online = (() => {
         fx.faiscas(c.x, c.y, ['#4ade80', '#22d3ee', '#ffffff'], 30);
 
         if (s.papel === 'dono') {
+            if (saguao()) saguao().retirar(); // sala cheia: sai da lista pública
             toast(`🎮 ${s.nomeAdversario} entrou na sala!`, 'sucesso');
             novaPartida('inicio');
         } else {
@@ -701,12 +716,13 @@ const online = (() => {
 
     // ---------- Criar sala / entrar / sair ----------
 
-    async function criarSala() {
+    async function criarSala({ publica = s.prefPublica } = {}) {
         if (s.status !== 'off') return;
         guardarNome();
         som.clique();
         const tentativa = ++s.tentativa;
         s.status = 'criando';
+        s.salaPublica = Boolean(publica);
         mostrarErro('');
         definirCarregando(ui.btnCriar, true, 'Criando sala…');
         ui.btnEntrar.disabled = true;
@@ -734,13 +750,18 @@ const online = (() => {
             s.peer = peer;
             s.codigo = codigo;
             s.papel = 'dono';
+            s.criadaEm = Date.now();
             peer.on('connection', receberConexao);
             ligarEventosPeer(peer);
-            entrarEmEspera({ titulo: 'Sala criada!', sub: 'Mande o link para um amigo entrar.' });
+            entrarEmEspera({
+                titulo: 'Sala criada!',
+                sub: s.salaPublica ? 'Ela vai aparecer na lista de salas abertas.' : 'Mande o link para um amigo entrar.',
+            });
             mostrarEtapa('aguardando');
         } catch (erro) {
             if (tentativa !== s.tentativa) return;
             s.status = 'off';
+            s.salaPublica = false;
             mostrarErro(mensagemDeErro(erro));
         } finally {
             if (tentativa === s.tentativa) {
@@ -761,14 +782,44 @@ const online = (() => {
         mostrarInterfaceOnline();
         renderizarCodigoGrande();
         ui.linkSala.value = linkDaSala();
+        if (s.salaPublica) definirAvisoVisibilidade('🌐 Sala pública: colocando na lista…', 'publica');
+        else definirAvisoVisibilidade('🔒 Sala privada: só entra quem tiver o código ou o link.', 'privada');
         reiniciarPartida(titulo, sub);
         bloquearEscolhas();
         renderizarSelos();
+        if (s.salaPublica) anunciarSala();
     }
 
-    async function entrarNaSala() {
+    function definirAvisoVisibilidade(texto, tipo) {
+        ui.avisoVis.textContent = texto;
+        ui.avisoVis.className = `aviso-visibilidade ${tipo}`;
+    }
+
+    // Coloca a sala na lista pública (só enquanto dá para alguém entrar nela)
+    function anunciarSala() {
+        if (!saguao()) {
+            definirAvisoVisibilidade('⚠️ A lista de salas não carregou. Mande o link para alguém entrar.', 'privada');
+            return;
+        }
+        if (!s.peer || s.peer.disconnected) return; // volta a anunciar quando o servidor do PeerJS reconectar
+        const codigo = s.codigo;
+        saguao().anunciar(
+            { codigo, nome: meuNome(), modo: estado.modo, criada: s.criadaEm || Date.now() },
+            (situacao) => {
+                if (s.status !== 'aguardando' || s.codigo !== codigo) return;
+                if (situacao === 'publicada') {
+                    definirAvisoVisibilidade('🌐 Sala pública: já aparece na lista de salas abertas.', 'publica');
+                } else {
+                    definirAvisoVisibilidade('⚠️ Não consegui colocar a sala na lista pública. Mande o link para alguém entrar.', 'privada');
+                }
+            },
+        );
+    }
+
+    // codigo/daLista vêm de um clique na lista de salas; sem eles, usa o campo de código
+    async function entrarNaSala({ codigo: codigoDaLista = null, daLista = false } = {}) {
         if (s.status !== 'off') return;
-        const codigo = normalizarCodigo(ui.inputCodigo.value);
+        const codigo = normalizarCodigo(codigoDaLista ?? ui.inputCodigo.value);
         if (!REGEX_CODIGO.test(codigo)) {
             mostrarErro('Digite o código de 5 letras da sala.');
             ui.inputCodigo.focus();
@@ -778,7 +829,7 @@ const online = (() => {
         som.clique();
         const tentativa = ++s.tentativa;
         // partida 0: o convidado espera o número que o dono da sala mandar
-        Object.assign(s, { status: 'conectando', papel: 'convidado', codigo, partida: 0 });
+        Object.assign(s, { status: 'conectando', papel: 'convidado', codigo, partida: 0, veioDaLista: daLista });
         mostrarErro('');
         ui.codigoConectando.textContent = codigo;
         mostrarEtapa('conectando');
@@ -806,9 +857,23 @@ const online = (() => {
     }
 
     function falharConexao(erro) {
+        const daLista = s.veioDaLista;
+        const codigo = s.codigo;
+        const tipo = erro && erro.type;
+        // sala da lista que não respondeu: fica fora da lista (e do "qualquer um") por um tempo
+        if (daLista && codigo && ['peer-unavailable', 'sala-cheia', 'tempo-conexao'].includes(tipo)) {
+            salasRuins.set(codigo, Date.now());
+        }
+        // convite para uma sala que não existe mais: libera a lista de salas abertas
+        if (!ui.convite.hidden && codigo === ui.conviteCodigo.textContent) limparConviteDaUrl();
         desmontar();
+        s.veioDaLista = false;
         mostrarEtapa('inicio');
-        mostrarErro(mensagemDeErro(erro));
+        if (ultimoAviso) renderizarSaguao(ultimoAviso); // tira a sala ruim da lista na hora
+        // entrando pela lista, "não achou" ou "cheia" quase sempre é alguém que chegou antes
+        if (daLista && tipo === 'peer-unavailable') mostrarErro('Essa sala acabou de fechar. Escolha outra!');
+        else if (daLista && tipo === 'sala-cheia') mostrarErro('Alguém entrou nessa sala antes de você. Escolha outra!');
+        else mostrarErro(mensagemDeErro(erro));
         if (!painelAberto()) abrirPainel();
     }
 
@@ -866,6 +931,7 @@ const online = (() => {
         som.clique();
         aplicarModo(modo);
         if (s.status === 'jogando') quandoLivre(() => novaPartida('modo'));
+        else if (s.status === 'aguardando' && s.salaPublica && saguao()) saguao().atualizar({ modo });
     }
 
     function reiniciar() {
@@ -906,6 +972,9 @@ const online = (() => {
         }
         ui.statusBarra.textContent = texto;
         ui.ponto.className = `online-ponto ${classe}`.trim();
+        let tipo = '';
+        if (s.papel === 'dono') tipo = s.salaPublica ? '· pública' : '· privada';
+        ui.tipoBarra.textContent = tipo;
     }
 
     function atualizarModosBloqueados() {
@@ -955,6 +1024,180 @@ const online = (() => {
             ui.linkSala.value = linkDaSala();
         }
         if (!ui.modal.hidden) focarEtapa(nome);
+        sincronizarSaguao();
+    }
+
+    // ---------- Lista de salas abertas (saguão) ----------
+
+    let acompanhandoSaguao = false;
+    let ultimasSalas = [];
+    let estadoSaguao = 'conectando';
+    let qualquerUmPendente = false; // "Jogar com qualquer um" clicado com a lista ainda carregando
+    let timerQualquerUm = null;
+    const salasRuins = new Map(); // código -> quando não deu para entrar nela
+    const ESPERA_SALA_RUIM_MS = 5 * 60 * 1000;
+
+    const etapaAtual = () => {
+        const visivel = ui.etapas.find((etapa) => !etapa.hidden);
+        return visivel ? visivel.dataset.etapa : null;
+    };
+
+    // A lista só fica ligada enquanto alguém está olhando para ela. Ela segue ligada durante a
+    // tentativa de entrar numa sala, para não começar do zero se a entrada falhar.
+    // Com um convite pendente, a lista some para o "Entrar" do convite ficar à vista.
+    function sincronizarSaguao() {
+        if (!saguao()) return;
+        const comConvite = !ui.convite.hidden;
+        ui.secaoSaguao.hidden = comConvite;
+        const etapa = etapaAtual();
+        const deveAcompanhar = ui.modal.classList.contains('aberto') && !comConvite
+            && (etapa === 'inicio' || etapa === 'conectando');
+        if (deveAcompanhar && !acompanhandoSaguao) {
+            acompanhandoSaguao = true;
+            renderizarSaguao({ estado: 'conectando', salas: [] });
+            saguao().acompanhar(renderizarSaguao);
+        } else if (!deveAcompanhar && acompanhandoSaguao) {
+            acompanhandoSaguao = false;
+            saguao().pararDeAcompanhar();
+            ultimasSalas = [];
+            cancelarQualquerUm();
+        }
+    }
+
+    function tempoEsperando(ms) {
+        const minutos = Math.floor(ms / 60000);
+        if (minutos < 1) return 'agora';
+        if (minutos < 60) return `há ${minutos} min`;
+        return 'há mais de 1 h';
+    }
+
+    const nomeCurtoDoModo = (modo) => (modo === 'livre' ? 'Livre' : MODOS[modo].titulo);
+
+    function criarItemSala(codigo) {
+        const item = document.createElement('li');
+        item.className = 'sala-item';
+        item.dataset.codigo = codigo;
+        const avatar = document.createElement('span');
+        avatar.className = 'sala-avatar';
+        avatar.setAttribute('aria-hidden', 'true');
+        avatar.textContent = '👤';
+        const info = document.createElement('span');
+        info.className = 'sala-info';
+        const nome = document.createElement('b');
+        nome.className = 'sala-nome';
+        const detalhe = document.createElement('small');
+        detalhe.className = 'sala-detalhe';
+        info.append(nome, detalhe);
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'botao-mini sala-entrar';
+        botao.textContent = 'Entrar';
+        botao.addEventListener('click', () => entrarNaSala({ codigo, daLista: true }));
+        item.append(avatar, info, botao);
+        return item;
+    }
+
+    // Atualiza a lista sem recriar os itens (não perde o foco de quem navega pelo teclado)
+    let ultimoAviso = null; // última resposta da lista, para redesenhar sem esperar a próxima
+
+    function renderizarSaguao({ estado: situacao, salas: todas }) {
+        if (!acompanhandoSaguao) return;
+        ultimoAviso = { estado: situacao, salas: todas };
+        const agora = Date.now();
+        // salas em que não deu para entrar ficam de fora por um tempo (fantasmas, cheias, falsas)
+        for (const [codigo, quando] of salasRuins) {
+            if (agora - quando > ESPERA_SALA_RUIM_MS) salasRuins.delete(codigo);
+        }
+        const lista = todas.filter((sala) => !salasRuins.has(sala.codigo));
+        ultimasSalas = lista;
+        estadoSaguao = situacao;
+        const total = lista.length;
+
+        // só mexe no texto quando muda, para o leitor de tela não repetir a cada 5 segundos
+        let status = 'procurando…';
+        if (situacao === 'ok') status = total ? `${total} ${total === 1 ? 'sala' : 'salas'} · ao vivo` : 'ao vivo';
+        else if (situacao === 'erro') status = 'indisponível';
+        if (ui.saguaoStatus.textContent !== status) ui.saguaoStatus.textContent = status;
+        const classe = `saguao-status ${situacao}`;
+        if (ui.saguaoStatus.className !== classe) ui.saguaoStatus.className = classe;
+
+        let vazio = '';
+        if (!total && situacao === 'conectando') vazio = 'Procurando salas abertas…';
+        else if (!total && situacao === 'erro') vazio = 'Não consegui carregar a lista agora. Você ainda pode criar uma sala ou entrar com código.';
+        else if (!total) vazio = 'Nenhuma sala aberta agora. Crie uma pública ou toque em “Jogar com qualquer um” e espere alguém chegar.';
+        if (ui.saguaoVazio.textContent !== vazio) ui.saguaoVazio.textContent = vazio;
+        ui.saguaoVazio.hidden = !vazio;
+
+        // primeiro tira as salas que saíram (sem mover as que ficam, para não perder o foco)
+        const vivas = new Set(lista.map((sala) => sala.codigo));
+        let perdeuFoco = false;
+        [...ui.saguaoLista.children].forEach((item) => {
+            if (vivas.has(item.dataset.codigo)) return;
+            if (item.contains(document.activeElement)) perdeuFoco = true;
+            item.remove();
+        });
+        const existentes = new Map([...ui.saguaoLista.children].map((item) => [item.dataset.codigo, item]));
+        lista.forEach((sala, i) => {
+            const item = existentes.get(sala.codigo) || criarItemSala(sala.codigo);
+            const modo = nomeCurtoDoModo(sala.modo);
+            const detalhe = `${modo} · ${tempoEsperando(agora - sala.criada)}`;
+            const nome = item.querySelector('.sala-nome');
+            if (nome.textContent !== sala.nome) nome.textContent = sala.nome;
+            const textoDetalhe = item.querySelector('.sala-detalhe');
+            if (textoDetalhe.textContent !== detalhe) textoDetalhe.textContent = detalhe;
+            item.querySelector('.sala-entrar').setAttribute('aria-label', `Entrar na sala de ${sala.nome} (${modo})`);
+            if (ui.saguaoLista.children[i] !== item) ui.saguaoLista.insertBefore(item, ui.saguaoLista.children[i] || null);
+        });
+        if (perdeuFoco) (ui.saguaoLista.querySelector('.sala-entrar') || ui.btnQualquerUm).focus({ preventScroll: true });
+
+        // "Jogar com qualquer um" estava esperando a lista responder
+        if (qualquerUmPendente && situacao !== 'conectando') {
+            cancelarQualquerUm();
+            jogarComQualquerUm();
+        }
+    }
+
+    function cancelarQualquerUm() {
+        clearTimeout(timerQualquerUm);
+        timerQualquerUm = null;
+        if (!qualquerUmPendente) return;
+        qualquerUmPendente = false;
+        definirCarregando(ui.btnQualquerUm, false);
+    }
+
+    // Entra na sala aberta mais antiga; se não houver nenhuma, cria uma pública e espera
+    function jogarComQualquerUm() {
+        if (s.status !== 'off' || qualquerUmPendente) return;
+        const sala = ultimasSalas[0];
+        if (sala) {
+            entrarNaSala({ codigo: sala.codigo, daLista: true });
+            return;
+        }
+        if (estadoSaguao === 'erro') {
+            mostrarErro('A lista de salas está fora do ar agora. Crie uma sala e mande o link para alguém.');
+            return;
+        }
+        if (estadoSaguao !== 'ok') {
+            // a lista ainda está carregando: "vazia" agora não quer dizer "nenhuma sala"
+            qualquerUmPendente = true;
+            definirCarregando(ui.btnQualquerUm, true, 'Procurando salas…');
+            timerQualquerUm = setTimeout(() => {
+                cancelarQualquerUm();
+                mostrarErro('A lista de salas está demorando para responder. Crie uma sala e mande o link para alguém.');
+            }, 12000);
+            return;
+        }
+        toast('Nenhuma sala aberta agora: criamos uma pública para você. É só esperar alguém entrar!');
+        criarSala({ publica: true });
+    }
+
+    function definirVisibilidade(publica, salvar = true) {
+        s.prefPublica = publica;
+        ui.visOpcoes.forEach((botao) => {
+            botao.setAttribute('aria-pressed', String((botao.dataset.vis === 'publica') === publica));
+        });
+        ui.btnCriar.textContent = publica ? 'Criar sala pública' : 'Criar sala privada';
+        if (salvar) armazenamento.gravar(CHAVE_PUBLICA, publica);
     }
 
     function focarEtapa(nome) {
@@ -972,6 +1215,8 @@ const online = (() => {
 
     function mostrarErro(texto) {
         ui.erro.textContent = texto;
+        // o aviso fica no fim do painel: rola até ele para a pessoa ver
+        if (texto && painelAberto()) ui.erro.scrollIntoView({ block: 'nearest' });
     }
 
     function definirCarregando(botao, carregando, texto = '') {
@@ -1002,8 +1247,8 @@ const online = (() => {
         ui.modal.hidden = false;
         void ui.modal.offsetWidth;
         ui.modal.classList.add('aberto');
-        const etapaVisivel = ui.etapas.find((etapa) => !etapa.hidden);
-        focarEtapa(etapaVisivel ? etapaVisivel.dataset.etapa : 'inicio');
+        focarEtapa(etapaAtual() || 'inicio');
+        sincronizarSaguao();
     }
 
     function fecharPainel({ devolverFoco = true } = {}) {
@@ -1016,6 +1261,7 @@ const online = (() => {
             mostrarEtapa('inicio');
         }
         ui.modal.classList.remove('aberto');
+        sincronizarSaguao();
         if (el.modal.hidden) el.app.inert = false;
         clearTimeout(s.timerPainel);
         s.timerPainel = setTimeout(() => {
@@ -1083,6 +1329,7 @@ const online = (() => {
     function limparConviteDaUrl() {
         ui.convite.hidden = true;
         ui.textoOnline.textContent = ui.textoOnline.dataset.original;
+        sincronizarSaguao(); // sem convite, a lista de salas abertas volta a aparecer
         const url = new URL(window.location.href);
         if (!url.searchParams.has('sala')) return;
         url.searchParams.delete('sala');
@@ -1120,10 +1367,20 @@ const online = (() => {
             btnCopiarBarra: $o('#btn-copiar-barra'),
             btnSairSala: $o('#btn-sair-sala'),
             reacoes: $o('#reacoes'),
+            secaoSaguao: $o('.saguao'),
+            saguaoLista: $o('#saguao-lista'),
+            saguaoStatus: $o('#saguao-status'),
+            saguaoVazio: $o('#saguao-vazio'),
+            btnQualquerUm: $o('#btn-qualquer-um'),
+            visOpcoes: [...document.querySelectorAll('.vis-opcao')],
+            avisoVis: $o('#aviso-visibilidade'),
+            tipoBarra: $o('#online-tipo'),
         });
         ui.textoOnline.dataset.original = ui.textoOnline.textContent;
         ui.inputNome.value = limparNome(armazenamento.ler(CHAVE_NOME, ''));
+        definirVisibilidade(armazenamento.ler(CHAVE_PUBLICA, true) !== false, false);
         ui.btnOnline.hidden = false; // só aparece depois que o modo online carregou
+        if (!saguao()) ui.btnQualquerUm.closest('.saguao').hidden = true;
 
         ui.btnOnline.addEventListener('click', () => {
             som.clique();
@@ -1133,8 +1390,14 @@ const online = (() => {
         ui.modal.addEventListener('click', (e) => {
             if (e.target === ui.modal) fecharPainel();
         });
-        ui.btnCriar.addEventListener('click', criarSala);
-        ui.btnEntrar.addEventListener('click', entrarNaSala);
+        ui.btnCriar.addEventListener('click', () => criarSala());
+        ui.btnEntrar.addEventListener('click', () => entrarNaSala());
+        ui.btnQualquerUm.addEventListener('click', jogarComQualquerUm);
+        ui.visOpcoes.forEach((botao) => botao.addEventListener('click', () => {
+            if (s.status !== 'off') return;
+            som.clique();
+            definirVisibilidade(botao.dataset.vis === 'publica');
+        }));
         ui.inputCodigo.addEventListener('input', () => {
             const normalizado = normalizarCodigo(ui.inputCodigo.value);
             if (normalizado !== ui.inputCodigo.value) ui.inputCodigo.value = normalizado;

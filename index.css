@@ -1883,6 +1883,224 @@ button {
     animation: none;
 }
 
+/* ---------- Salas abertas (saguão) e sala pública/privada ---------- */
+
+.modal-icone.online-icone {
+    font-size: 3.4rem;
+}
+
+.saguao {
+    margin: 2px 0 4px;
+    padding: 14px;
+    border-radius: 16px;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--borda);
+}
+
+.saguao-topo {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.saguao-topo h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.saguao-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--suave);
+    white-space: nowrap;
+}
+
+.saguao-status::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--empate);
+    animation: pulso-ponto 1.6s ease-in-out infinite;
+}
+
+.saguao-status.ok::before {
+    background: var(--vitoria);
+    box-shadow: 0 0 8px var(--vitoria);
+}
+
+.saguao-status.erro::before {
+    background: var(--derrota);
+    animation: none;
+}
+
+.saguao-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 196px;
+    margin: 0 0 10px;
+    padding: 0 2px 0 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.saguao-lista:empty {
+    display: none;
+}
+
+.sala-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 10px;
+    border-radius: 12px;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    animation: sala-entra 0.45s var(--mola);
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.sala-item:hover {
+    border-color: rgba(74, 222, 128, 0.45);
+    background: rgba(74, 222, 128, 0.06);
+}
+
+@keyframes sala-entra {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+}
+
+.sala-avatar {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    background: rgba(244, 114, 182, 0.15);
+    border: 1px solid rgba(244, 114, 182, 0.4);
+}
+
+.sala-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.sala-nome {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sala-detalhe {
+    overflow: hidden;
+    font-size: 0.78rem;
+    color: var(--suave);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sala-entrar {
+    flex: none;
+    border-color: rgba(74, 222, 128, 0.5);
+    background: rgba(74, 222, 128, 0.16);
+}
+
+.sala-entrar:hover {
+    background: rgba(74, 222, 128, 0.3);
+}
+
+.saguao-vazio {
+    margin: 0 0 10px;
+    font-size: 0.88rem;
+    color: var(--suave);
+}
+
+.botao-secundario.largo {
+    width: 100%;
+}
+
+.visibilidade {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.vis-opcao {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 8px;
+    border-radius: 12px;
+    border: 1px solid var(--borda);
+    background: var(--superficie);
+    color: var(--suave);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.25s, background 0.25s, color 0.25s, transform 0.25s var(--mola);
+}
+
+.vis-opcao small {
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+
+.vis-opcao:hover {
+    color: var(--texto);
+    transform: translateY(-1px);
+}
+
+.vis-opcao[aria-pressed="true"] {
+    color: var(--texto);
+    border-color: var(--roxo);
+    background: rgba(167, 139, 250, 0.18);
+    box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.35) inset, 0 8px 20px -12px var(--roxo);
+}
+
+.aviso-visibilidade {
+    display: inline-block;
+    margin: 0 0 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.aviso-visibilidade.publica {
+    color: var(--vitoria);
+    background: rgba(74, 222, 128, 0.12);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+}
+
+.aviso-visibilidade.privada {
+    color: var(--roxo);
+    background: rgba(167, 139, 250, 0.14);
+    border: 1px solid rgba(167, 139, 250, 0.4);
+}
+
+.online-tipo {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--suave);
+}
+
 /* ---------- Rodapé ---------- */
 
 .rodape {
@@ -2178,6 +2396,8 @@ button {
     .online-icone,
     .radar b,
     .radar span,
+    .saguao-status::before,
+    .sala-item,
     .pontinhos i {
         animation: none !important;
     }
