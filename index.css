@@ -1897,12 +1897,36 @@ button {
     text-align: center;
 }
 
-.rodape strong {
+/* nome do autor: link para o LinkedIn, com sublinhado em degradê que cresce no hover */
+.rodape .autor {
+    position: relative;
     font-weight: 600;
+    text-decoration: none;
     background: linear-gradient(90deg, var(--jogador), var(--roxo), var(--cpu));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+}
+
+.rodape .autor::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--jogador), var(--roxo), var(--cpu));
+    transform: scaleX(0.25);
+    transform-origin: left;
+    opacity: 0.6;
+    transition: transform 0.35s var(--suave-saida), opacity 0.35s;
+}
+
+.rodape .autor:hover::after,
+.rodape .autor:focus-visible::after {
+    transform: scaleX(1);
+    opacity: 1;
 }
 
 .linkedin {
